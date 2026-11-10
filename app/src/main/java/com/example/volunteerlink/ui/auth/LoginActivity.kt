@@ -1,0 +1,64 @@
+package com.example.volunteerlink.ui.auth
+
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.example.volunteerlink.data.LocalRepository
+import com.example.volunteerlink.data.SessionManager
+import com.example.volunteerlink.databinding.ActivityLoginBinding
+import com.example.volunteerlink.model.Role
+import com.example.volunteerlink.ui.coordinator.CoordinatorHomeActivity
+import com.example.volunteerlink.ui.volunteer.BrowseActivitiesActivity
+
+class LoginActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityLoginBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityLoginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        binding.btnLogin.setOnClickListener {
+            val email = binding.etEmail.text.toString().trim()
+            val pass = binding.etPassword.text.toString().trim()
+
+            if (email.isEmpty() || pass.isEmpty()) {
+                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val (user, error) = LocalRepository.loginUser(email, pass)
+            if (user != null) {
+                SessionManager.currentUser = user
+                routeUser(user.role)
+            } else {
+                Toast.makeText(this, error ?: "Login failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.tvToRegister.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
+
+        binding.btnDemoCoord.setOnClickListener {
+            binding.etEmail.setText("coordinator@example.com")
+            binding.etPassword.setText("password123")
+        }
+
+        binding.btnDemoVol.setOnClickListener {
+            binding.etEmail.setText("volunteer@example.com")
+            binding.etPassword.setText("password123")
+        }
+    }
+
+    private fun routeUser(role: Role) {
+        val intent = when (role) {
+            Role.COORDINATOR -> Intent(this, CoordinatorHomeActivity::class.java)
+            Role.VOLUNTEER -> Intent(this, BrowseActivitiesActivity::class.java)
+        }
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+}
